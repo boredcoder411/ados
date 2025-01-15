@@ -39,12 +39,6 @@ void __NOINLINE __REGPARM print(const char *s){
   }
 }
 
-void __NOINLINE __REGPARM print_hex(uint8_t value) {
-  const char *hex = "0123456789ABCDEF";
-  char buf[3] = { hex[(value >> 4) & 0xF], hex[value & 0xF], '\0' };
-  print(buf);
-}
-
 uint8_t __NOINLINE __REGPARM perform_load(const DiskAddressPacket* dap, uint16_t disk_number) {
   uint8_t status;
   __asm__ __volatile__ (
@@ -71,13 +65,6 @@ void __NORETURN main(){
     print("Disk read error\r\n");
     while (1);
   }
-
-  uint8_t* sector_data = (uint8_t*)0x7E00;
-  MasterBootRecord* mbr = (MasterBootRecord*)sector_data;
-
-  print("MBR signature: ");
-  print_hex(mbr->signature & 0xFF);
-  print_hex(mbr->signature >> 8);
 
   while (1);
 }
