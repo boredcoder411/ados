@@ -66,6 +66,20 @@ void __NORETURN main(){
     while (1);
   }
 
+  MasterBootRecord* mbr = (MasterBootRecord*)0x7E00;
+
+  // check if the mbr is valid
+  if (mbr->signature != 0xAA55) {
+    print("Invalid MBR signature\r\n");
+    while (1);
+  }
+
+  // todo:
+  // - read the first partition
+  // - find a filesystem in the partition
+  // - read the filesystem
+  // - be able to load a file and drop it
+
   while (1);
 }
 
