@@ -24,22 +24,6 @@ void __NOINLINE __REGPARM print(const char *s){
   }
 }
 
-DiskAddressPacket create_disk_address_packet(
-    uint64_t start_lba,
-    uint16_t number_of_sectors,
-    uint16_t target_offset,
-    uint16_t target_segment
-) {
-    DiskAddressPacket dap;
-    dap.size = 0x10;
-    dap.reserved = 0;
-    dap.num_sectors = number_of_sectors;
-    dap.offset = target_offset;
-    dap.segment = target_segment;
-    dap.lba = start_lba;
-    return dap;
-}
-
 void perform_load(const DiskAddressPacket* dap, uint16_t disk_number) {
     uint16_t self_addr = (uint16_t)(uintptr_t)dap; // Cast pointer to 16-bit segment offset
 
@@ -51,10 +35,16 @@ void perform_load(const DiskAddressPacket* dap, uint16_t disk_number) {
     );
 }
 
-
 void __NORETURN main(){
   // load the second sector of the disk to 0x7E00
-  DiskAddressPacket dap = create_disk_address_packet(1, 1, 0x7E00, 0);
+  DiskAddressPacket dap = {
+    .size = 0x10,
+    .reserved = 0,
+    .num_sectors = 1,
+    .offset = 0x7E00,
+    .segment = 0,
+    .lba = 1
+  };
   perform_load(&dap, 0x80);
 
   print("h");
