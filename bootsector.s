@@ -28,6 +28,10 @@ disk_load:
 
 BOOT_DRIVE db 0
 
+times 446-($-$$) db 0
+
+db 0x80
+
 times 510-($-$$) db 0
 dw 0xaa55
 
