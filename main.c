@@ -127,6 +127,14 @@ void __NORETURN main(){
   print(hextoa(wad->num_lumps));
   print(hextoa(wad->directory_offset));
 
+  // loop over the lumps
+  // print the name of the lump
+  for (int i = 0; i < wad->num_lumps; i++) {
+    LumpEntry* lump = (LumpEntry*)(0x7F00 + wad->directory_offset + i * sizeof(LumpEntry));
+    print(lump->name);
+    print("\r\n");
+  }
+
   // todo:
   // - read the filesystem
   // - be able to load a file and drop it
