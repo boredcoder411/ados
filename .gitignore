@@ -1,3 +1,5 @@
 *.elf
 *.o
 *.bin
+*.wad
+*.lmp
