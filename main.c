@@ -1,13 +1,9 @@
 #include "code16gcc.h"
 #include "wad.h"
+#include "bios.h"
 #include <stdint.h>
 
 __asm__ ("jmpl  $0, $main\n");
-
-#define __NOINLINE  __attribute__((noinline))
-#define __REGPARM   __attribute__((regparm(3)))
-#define __NORETURN  __attribute__((noreturn))
-#define __PACKED    __attribute__((packed))
 
 extern void __NORETURN HALT();
 
