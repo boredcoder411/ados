@@ -67,22 +67,7 @@ int strncmp(const char* a, const char* b, int n){
 }
 
 void __NORETURN main(){
-  DiskAddressPacket dap = {
-    .size = 0x10,
-    .reserved = 0,
-    .num_sectors = 1,
-    .offset = 0x7E00,
-    .segment = 0,
-    .lba = 0
-  };
-
-  uint8_t status = perform_load(&dap, 0x80);
-  if (status != 0) {
-    print("Disk read error\r\n");
-    HALT();
-  }
-
-  MasterBootRecord* mbr = (MasterBootRecord*)0x7E00;
+  MasterBootRecord* mbr = (MasterBootRecord*)0x7C00;
 
   // check if the mbr is valid
   if (mbr->signature != 0xAA55) {
@@ -100,16 +85,26 @@ void __NORETURN main(){
   }
 
   // read the partition into memory
-  // from disk to 0x7F00
-  dap.lba = partition->first_lba;
-  dap.num_sectors = partition->num_sectors;
-  dap.offset = 0x7F00;
-  status = perform_load(&dap, 0x80);
+  // from disk to 0x7E00
+  DiskAddressPacket dap = {
+    .size = sizeof(DiskAddressPacket),
+    .num_sectors = 1,
+    .offset = 0x7E00 & 0xF,
+    .segment = 0x7E00 >> 4,
+    .lba = partition->first_lba
+  };
+
+  uint8_t status = perform_load(&dap, 0x80);
+
+  if (status != 0) {
+    print("Disk read error\r\n");
+    HALT();
+  }
 
   // check if we found a valid partition
   // should start with IWAD at first 4 bytes
   // so cast it to a wad header and check
-  WADHeader* wad = (WADHeader*)0x7F00;
+  WADHeader* wad = (WADHeader*)0x7E00;
 
   // check if the partition is valid
   if (strncmp(wad->identifier, "IWAD", 4) != 0) {
@@ -126,7 +121,7 @@ void __NORETURN main(){
   // loop over the lumps
   // print the name of the lump
   for (int i = 0; i < wad->num_lumps; i++) {
-    LumpEntry* lump = (LumpEntry*)(0x7F00 + wad->directory_offset + i * sizeof(LumpEntry));
+    LumpEntry* lump = (LumpEntry*)(0x7E00 + wad->directory_offset + i * sizeof(LumpEntry));
     print(lump->name);
     print("\r\n");
   }
