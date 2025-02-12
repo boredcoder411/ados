@@ -1,35 +1,12 @@
 #include "code16gcc.h"
 #include "wad.h"
 #include "bios.h"
+#include "types.h"
 #include <stdint.h>
 
 __asm__ ("jmpl  $0, $main\n");
 
 extern void __NORETURN HALT();
-
-typedef struct {
-  uint8_t size;
-  uint8_t reserved;
-  uint16_t num_sectors;
-  uint16_t offset;
-  uint16_t segment;
-  uint64_t lba;
-} __PACKED DiskAddressPacket;
-
-typedef struct {
-  uint8_t status;
-  uint8_t first_chs[3];
-  uint8_t type;
-  uint8_t last_chs[3];
-  uint32_t first_lba;
-  uint32_t num_sectors;
-} __PACKED PartitionTableEntry;
-
-typedef struct {
-  uint8_t bootstrap[446];
-  PartitionTableEntry partitions[4];
-  uint16_t signature;
-} __PACKED MasterBootRecord;
 
 void __NOINLINE __REGPARM print(const char *s){
   while(*s){
@@ -49,6 +26,20 @@ uint8_t __NOINLINE __REGPARM perform_load(const DiskAddressPacket* dap, uint16_t
   return status >> 8; // BIOS places status in AH
 }
 
+uint16_t detect_hardware() {
+  uint16_t equipment_code;
+  // uses int 0x11 to get equipment list
+  // and returns the equipment code
+  __asm__ __volatile__ (
+    "int $0x11"
+    : "=a"(equipment_code)
+    :
+    : "cc"
+  );
+
+  return equipment_code;
+}
+
 char* hextoa(uint8_t hex){
   static char buf[3];
   buf[0] = "0123456789ABCDEF"[hex >> 4];
@@ -64,6 +55,15 @@ int strncmp(const char* a, const char* b, int n){
     }
   }
   return 0;
+}
+
+void hexdump(void* data, int size){
+  uint8_t* ptr = (uint8_t*)data;
+  for (int i = 0; i < size; i++){
+    print(hextoa(ptr[i]));
+    print(" ");
+  }
+  print("\r\n");
 }
 
 void __NORETURN main(){
@@ -84,52 +84,32 @@ void __NORETURN main(){
     partition++;
   }
 
+  uint16_t disk_count = ((detect_hardware() & 0b0000000011000000) >> 6) + 1;
+  if (disk_count != 2) {
+    print("Invalid disk count\r\n");
+    HALT();
+  }
+
   // read the partition into memory
   // from disk to 0x7E00
   DiskAddressPacket dap = {
-    .size = sizeof(DiskAddressPacket),
+    .size = 0x10,
+    .reserved = 0,
     .num_sectors = 1,
-    .offset = 0x7E00 & 0xF,
-    .segment = 0x7E00 >> 4,
+    .offset = 0x7E00,
+    .segment = 0,
     .lba = partition->first_lba
   };
 
-  uint8_t status = perform_load(&dap, 0x80);
-
+  uint8_t status = perform_load(&dap, 0x0);
   if (status != 0) {
-    print("Disk read error\r\n");
+    print("Failed to load partition\r\n");
     HALT();
   }
 
-  // check if we found a valid partition
-  // should start with IWAD at first 4 bytes
-  // so cast it to a wad header and check
-  WADHeader* wad = (WADHeader*)0x7E00;
+  WADHeader* wad_header = (WADHeader*)0x7E00;
+  hexdump(wad_header, sizeof(WADHeader));
 
-  // check if the partition is valid
-  if (strncmp(wad->identifier, "IWAD", 4) != 0) {
-    print("Invalid WAD header\r\n");
-    HALT();
-  }
-
-  // showing some data about the filesystem
-  print("WAD found:\r\n");
-  print(wad->identifier);
-  print(hextoa(wad->num_lumps));
-  print(hextoa(wad->directory_offset));
-
-  // loop over the lumps
-  // print the name of the lump
-  for (int i = 0; i < wad->num_lumps; i++) {
-    LumpEntry* lump = (LumpEntry*)(0x7E00 + wad->directory_offset + i * sizeof(LumpEntry));
-    print(lump->name);
-    print("\r\n");
-  }
-
-  // todo:
-  // - read the filesystem
-  // - be able to load a file and drop it
-
-  HALT(); 
+  HALT();
 }
 
