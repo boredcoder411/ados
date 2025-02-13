@@ -16,7 +16,7 @@ void __NOINLINE __REGPARM print(const char *s){
 }
 
 uint8_t __NOINLINE __REGPARM perform_load(const DiskAddressPacket* dap, uint16_t disk_number) {
-  uint8_t status;
+  uint16_t status;
   __asm__ __volatile__ (
     "int $0x13"
     : "=a"(status)
