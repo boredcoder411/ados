@@ -84,12 +84,6 @@ void __NORETURN main(){
     partition++;
   }
 
-  uint16_t disk_count = ((detect_hardware() & 0b0000000011000000) >> 6) + 1;
-  if (disk_count != 2) {
-    print("Invalid disk count\r\n");
-    HALT();
-  }
-
   // read the partition into memory
   // from disk to 0x7E00
   DiskAddressPacket dap = {
@@ -101,7 +95,7 @@ void __NORETURN main(){
     .lba = partition->first_lba
   };
 
-  uint8_t status = perform_load(&dap, 0x0);
+  uint8_t status = perform_load(&dap, 0x80);
   if (status != 0) {
     print("Failed to load partition\r\n");
     HALT();
@@ -109,6 +103,16 @@ void __NORETURN main(){
 
   WADHeader* wad_header = (WADHeader*)0x7E00;
   hexdump(wad_header, sizeof(WADHeader));
+
+  if (strncmp(wad_header->identifier, "IWAD", 4) != 0) {
+    print("Invalid WAD header\r\n");
+    HALT();
+  }
+
+  for(uint32_t i = 0; i < wad_header->num_lumps; i++){
+    LumpEntry* lump = (LumpEntry*)(0x7E00 + wad_header->directory_offset + i * sizeof(LumpEntry));
+    print(lump->name);
+  }
 
   HALT();
 }
