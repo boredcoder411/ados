@@ -105,36 +105,29 @@ void __NORETURN main() {
     HALT();
   }
 
+  // check if filesystem is a valid WAD
   WADHeader* wad_header = (WADHeader*)0x7E00;
-  hexdump(wad_header, sizeof(WADHeader));
 
   if (strncmp(wad_header->identifier, "IWAD", 4) != 0) {
     print("Invalid WAD header\r\n");
     HALT();
   }
 
-  //for(uint32_t i = 0; i < wad_header->num_lumps; i++){
-  //  LumpEntry* lump = (LumpEntry*)(0x7E00 + wad_header->directory_offset + i * sizeof(LumpEntry));
-  //  print(lump->name);
-  //}
-
-  // loop over lumps until you find one called "init.sys"
-  bool found = false;
+  // loop over lumps until you find one called "comd.hex"
   for(uint32_t i = 0; i < wad_header->num_lumps; i++) {
     LumpEntry* lump = (LumpEntry*)(0x7E00 + wad_header->directory_offset + i * sizeof(LumpEntry));
 
-    if(strncmp(lump->name, "code16gc", 8) == 0) {
-      found = true;
-      // show file contents
-      print((char*)(0x7E00 + lump->offset));
-      break;
+    if(strncmp(lump->name, "comd.hex", 8) == 0) {
+      // jump to the start of the lump
+      // create a function pointer to the start of the lump
+      void (*entry)() = (void (*)())(0x7E00 + lump->offset);
+      entry();
+      HALT();
     }
   }
 
-  if (!found) {
-    print("init.sys not found\r\n");
-    HALT();
-  }
+  print("comd.hex not found\r\n");
+  HALT();
 
   while(1);
 }
