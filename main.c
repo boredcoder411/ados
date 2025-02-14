@@ -3,10 +3,12 @@
 #include "bios.h"
 #include "types.h"
 #include <stdint.h>
+#include <stdbool.h>
 
 __asm__ ("jmpl  $0, $main\n");
 
 extern void __NORETURN HALT();
+extern void install_keyboard();
 
 void __NOINLINE __REGPARM print(const char *s){
   while(*s){
@@ -66,7 +68,9 @@ void hexdump(void* data, int size){
   print("\r\n");
 }
 
-void __NORETURN main(){
+void __NORETURN main() {
+  install_keyboard();
+
   MasterBootRecord* mbr = (MasterBootRecord*)0x7C00;
 
   // check if the mbr is valid
@@ -109,11 +113,29 @@ void __NORETURN main(){
     HALT();
   }
 
-  for(uint32_t i = 0; i < wad_header->num_lumps; i++){
+  //for(uint32_t i = 0; i < wad_header->num_lumps; i++){
+  //  LumpEntry* lump = (LumpEntry*)(0x7E00 + wad_header->directory_offset + i * sizeof(LumpEntry));
+  //  print(lump->name);
+  //}
+
+  // loop over lumps until you find one called "init.sys"
+  bool found = false;
+  for(uint32_t i = 0; i < wad_header->num_lumps; i++) {
     LumpEntry* lump = (LumpEntry*)(0x7E00 + wad_header->directory_offset + i * sizeof(LumpEntry));
-    print(lump->name);
+
+    if(strncmp(lump->name, "code16gc", 8) == 0) {
+      found = true;
+      // show file contents
+      print((char*)(0x7E00 + lump->offset));
+      break;
+    }
   }
 
-  HALT();
+  if (!found) {
+    print("init.sys not found\r\n");
+    HALT();
+  }
+
+  while(1);
 }
 
