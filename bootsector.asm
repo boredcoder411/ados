@@ -3,15 +3,29 @@
 
 mov [BOOT_DRIVE], dl
 
+xor ax, ax
+mov ds, ax
+mov es, ax
+mov ss, ax
+mov fs, ax
+mov gs, ax
+
+cld
+
 mov bp, 0x7c00
 mov sp, bp
+
+mov ah, 0x00
+mov al, 0x03
+int 0x10
 
 ;; Load the kernel from disk
 mov bx, 0x8000
 mov dh, NUM_KERNEL_SECTORS
 mov dl, [BOOT_DRIVE]
 call disk_load
-jmp 0x8000
+push dx
+call 0x8000
 
 disk_load:
   pusha
@@ -28,17 +42,7 @@ disk_load:
 
 BOOT_DRIVE db 0
 
-times 446-($-$$) db 0
-
-db 0x80
-db 0x00, 0x01, 0x00
-db 0x83
-db 0x00, 0x01, 0x00
-db 0x00, 0x00, 0x00, 0x00
-db 0x01
-
-times 510-($-$$) db 0
-dw 0xaa55
+times 512-($-$$) db 0
 
 NUM_KERNEL_SECTORS equ (kernel_end - kernel_start + 511) / 512
 
