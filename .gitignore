@@ -3,3 +3,4 @@
 *.bin
 *.lmp
 .venv/
+image.img

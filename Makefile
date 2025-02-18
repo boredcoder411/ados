@@ -34,7 +34,7 @@ bootsector.bin: bootsector.asm
 	$(NASM) -f bin bootsector.asm -o bootsector.bin
 
 clean:
-	rm -f $(OBJ_FILES) main.elf kernel.bin bootsector.bin
+	rm -f $(OBJ_FILES) main.elf kernel.bin bootsector.bin image.img
 
 .PHONY: all clean
 
