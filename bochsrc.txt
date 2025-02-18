@@ -1,0 +1,6 @@
+megs: 128
+romimage: file=/usr/share/bochs/BIOS-bochs-latest, address=0xfffe0000
+vgaromimage: file=/home/dev/VGABIOS/VGABIOS-lgpl-latest.bin
+ata0-master: type=disk, path="image.img", mode=flat
+boot: disk
+mouse: enabled=0
