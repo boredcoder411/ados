@@ -69,6 +69,15 @@ void hexdump(void* data, int size){
 }
 
 void __NORETURN main() {
+  uint16_t drive_number;
+  __asm__ __volatile__ (
+    "movw %%dx, %0"
+    : "=r"(drive_number)
+    :
+    :
+  );
+  drive_number &= 0xFF;
+
   install_keyboard();
 
   MasterBootRecord* mbr = (MasterBootRecord*)0x7C00;
@@ -99,7 +108,7 @@ void __NORETURN main() {
     .lba = partition->first_lba
   };
 
-  uint8_t status = perform_load(&dap, 0x80);
+  uint8_t status = perform_load(&dap, drive_number);
   if (status != 0) {
     print("Failed to load partition\r\n");
     HALT();
